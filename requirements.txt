@@ -1,6 +1,8 @@
+jupyter
+numpy
+opencv-python
+pandas
+plotly
 torch
 torchvision
 torchaudio
-opencv-python
-numpy
-jupyter
