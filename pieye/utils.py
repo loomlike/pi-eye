@@ -28,7 +28,7 @@ coco_labels = [
 
 np.random.seed(42)
 # this will help us create a different color for each class
-colors = np.random.uniform(0, 255, size=(len(coco_labels), 3))
+colors = np.random.randint(0, 256, size=(len(coco_labels), 3))
 
 plt.rcParams["savefig.bbox"] = 'tight'
 
@@ -39,13 +39,13 @@ def show_bboxes(image: Tensor, outputs: Tensor, threshold: float = 0.5):
     pred_bboxes = pred_bboxes[pred_scores >= threshold]
     pred_idx = outputs[0]['labels'][:len(pred_bboxes)].detach().cpu()
     pred_labels = [coco_labels[i] for i in pred_idx]
-
+    # return pred_labels, pred_idx
     show(
         draw_bounding_boxes(
             image=image,
             boxes=pred_bboxes,
             labels=pred_labels,
-            colors=colors[pred_idx],
+            colors=colors[pred_idx].tolist(),
         )
     )
 
