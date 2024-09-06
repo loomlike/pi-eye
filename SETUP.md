@@ -35,5 +35,5 @@ And then reboot. After you reboot the video4linux2 device /dev/video0 should exi
 $ python -m venv ./env/torch
 $ source ./env/torch/bin/activate
 $ pip install torch torchvision torchaudio
-$ pip install opencv-python
+$ pip install opencv-python matplotlib
 ```
