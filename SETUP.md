@@ -21,19 +21,32 @@ start_x=1
 
 # This needs to be at least 128M for the camera processing, if it's bigger you can just leave it as is.
 gpu_mem=128
-
-# You need to comment/remove the existing camera_auto_detect line since this causes issues with OpenCV/V4L2 capture.
-#camera_auto_detect=1
 ```
 
 And then reboot. After you reboot the video4linux2 device /dev/video0 should exist.
+
+To setup camera, check the product page for the camera module you have.
+
+To use `picamera2` module:
+https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 
 
 ### Setup python dependencies
 
 ```bash
-$ python -m venv ./env/torch
-$ source ./env/torch/bin/activate
-$ pip install torch torchvision torchaudio
-$ pip install opencv-python matplotlib
+# to install picamera2
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt install -y python3-picamera2
+
+# create venv using system packages
+$ python -m venv --system-site-packages .venv
+
+# activate venv and install additional dependencies
+$ source .venv/bin/activate
+$ pip install torch torchvision torchaudio opencv-python matplotlib jupyter
 ```
+
+
+
+
