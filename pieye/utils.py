@@ -10,7 +10,7 @@ from torch import Tensor
 import torchvision.transforms.functional as F
 from torchvision.utils import draw_bounding_boxes
 
-from labels import coco_labels
+from .labels import coco_labels
 
 
 np.random.seed(42)
@@ -20,20 +20,17 @@ colors = np.random.randint(0, 256, size=(len(coco_labels), 3))
 plt.rcParams["savefig.bbox"] = 'tight'
 
 
-def show_bboxes(image: Tensor, outputs: Tensor, threshold: float = 0.5):
+def bounding_boxes(image: Tensor, outputs: Tensor, threshold: float = 0.5) -> np.ndarray:
     pred_scores = outputs[0]['scores'].detach().cpu()
     pred_bboxes = outputs[0]['boxes'].detach().cpu()
     pred_bboxes = pred_bboxes[pred_scores >= threshold]
     pred_idx = outputs[0]['labels'][:len(pred_bboxes)].detach().cpu()
     pred_labels = [coco_labels[i] for i in pred_idx]
-    # return pred_labels, pred_idx
-    show(
-        draw_bounding_boxes(
-            image=image,
-            boxes=pred_bboxes,
-            labels=pred_labels,
-            colors=colors[pred_idx].tolist(),
-        )
+    return draw_bounding_boxes(
+        image=image,
+        boxes=pred_bboxes,
+        labels=pred_labels,
+        colors=colors[pred_idx].tolist(),
     )
 
 
