@@ -16,7 +16,6 @@ from .labels import coco_labels
 np.random.seed(42)
 # this will help us create a different color for each class
 colors = np.random.randint(0, 256, size=(len(coco_labels), 3))
-
 plt.rcParams["savefig.bbox"] = 'tight'
 
 
@@ -30,7 +29,7 @@ def bounding_boxes(image: Tensor, outputs: Tensor, threshold: float = 0.5) -> np
         image=image,
         boxes=pred_bboxes,
         labels=pred_labels,
-        colors=colors[pred_idx].tolist(),
+        colors=[tuple(c) for c in colors[pred_idx].tolist()] if len(pred_idx) > 1 else tuple(colors[pred_idx]),
     )
 
 
