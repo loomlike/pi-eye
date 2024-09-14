@@ -13,8 +13,10 @@ from torchvision.io import read_image
 from torchvision.ops.boxes import masks_to_boxes
 
 
-def get_filepaths(dir: str, ext: str = "png") -> List[str]:
-    return sorted([f for f in os.listdir(dir) if f.endswith(ext)])
+def get_filepaths(dir: str, ext: List[str] | str = ["png", "jpg"]) -> List[str]:
+    if isinstance(ext, str):
+        ext = [ext]
+    return sorted([os.path.join(dir, f) for f in os.listdir(dir) if os.path.splitext(f)[1][1:] in ext])
 
 
 class ClassificationDataset(torch.utils.data.Dataset):

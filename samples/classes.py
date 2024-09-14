@@ -1,0 +1,5 @@
+classes = [
+    "droid",
+    "ghost",
+    "person",
+]

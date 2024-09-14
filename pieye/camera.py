@@ -35,9 +35,9 @@ class VideoCapture(threading.Thread):
         if is_libcamera:
             if self.cam is None:
                 self.cam = Picamera2()
-                # Picamera2.create_preview_configuration will generate a configuration suitable for displaying camera preview images on the display, or prior to capturing a still image
-                # Picamera2.create_still_configuration will generate a configuration suitable for capturing a high-resolution still image
-                # Picamera2.create_video_configuration will generate a configuration suitable for recording video files
+                # create_preview_configuration will generate a configuration suitable for displaying camera preview images on the display
+                # create_still_configuration will generate a configuration suitable for capturing a high-resolution still image
+                # create_video_configuration will generate a configuration suitable for recording video files
                 self.cam.configure(self.cam.create_preview_configuration(main={"format": 'RGB888', "size": self.resolution}))
                 # There are three autoFocus modes: Manual, Auto, and Continuous
                 self.cam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
@@ -48,7 +48,7 @@ class VideoCapture(threading.Thread):
             self.cam = cv2.VideoCapture(0)
             self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
             self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])    
-            
+
         sleep(1)  # delay for starting the cam
         
         super().start()
@@ -62,7 +62,7 @@ class VideoCapture(threading.Thread):
             self.cam.release()
             self.cam = None
 
-
+    
 class Camera():
     def __init__(self, resolution: Tuple[int, int] = (320, 320)):
         self.resolution = resolution
