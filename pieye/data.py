@@ -5,6 +5,7 @@ Refs: https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 import os
 from typing import Callable, List
 
+from PIL import Image
 import pandas as pd
 import torch
 from torch.nn import functional as F
@@ -40,6 +41,7 @@ class ClassificationDataset(torch.utils.data.Dataset):
             transforms: torch.transforms
             target_transforms: label transform function
         """
+        # TODO: Add classes
         self.labels = pd.read_csv(annotations_filepath)
         self.images = get_filepaths(images_dir)
         self.transforms = transforms
@@ -49,7 +51,8 @@ class ClassificationDataset(torch.utils.data.Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        image = read_image(self.images[idx])
+        # image = read_image(self.images[idx])
+        image = Image.open(self.images[idx])
         label = self.labels.iloc[idx, 1]  # columns are [filename, label]
         if self.transforms:
             image = self.transforms(image)
