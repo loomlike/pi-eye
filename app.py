@@ -1,30 +1,28 @@
+import argparse
 import base64
 import io
 import json
 from typing import Any
 
+import numpy as np
 import torch
 from torchvision import models
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request
-from pieye.labels import imagenet_labels
+from pieye.labels import bag_detection_labels as classes
+from pieye.models import BagDetectionMobileNetV3
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--model-path", type=str)
+
+args = parser.parse_args()
 
 app = Flask(__name__)
 
-# Load classification model.
-model = models.quantization.mobilenet_v3_large(
-    weights=models.quantization.MobileNet_V3_Large_QuantizedWeights.DEFAULT,
-    quantize=True,
-)
-model = torch.jit.script(model)
-model = model.eval()
-
-preprocess= transforms.Compose([
-    transforms.Resize((224, 224)),  # classification model's resolution
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+model = BagDetectionMobileNetV3(num_classes=len(classes), state_dict_path=args.model_path)
+preprocess = model.preprocess
 
 
 def transform_image(image_bytes: Any) -> torch.Tensor:
@@ -32,23 +30,20 @@ def transform_image(image_bytes: Any) -> torch.Tensor:
     return preprocess(image).unsqueeze(0)  # to batch
 
 
-def get_result(outputs: torch.Tensor) -> str:
-    values, indices = outputs.softmax(dim=1).max(1)
+def get_result(preds: np.ndarray) -> dict:
     return {
-        "score": values.item(),
-        "label": imagenet_labels[indices.item()], 
+        "score": preds[0].tolist(),
+        "label": np.array(classes)[preds[0] > 0.5].tolist(),
     }
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        file = request.files['image']
-        input_batch = transform_image(file.stream)
-        with torch.no_grad():
-            outputs = model(input_batch)
-        
-        return jsonify(get_result(outputs))
+        image = Image.open(io.BytesIO(request.data))
+        preds = model.predict(image)
+
+        return jsonify(get_result(preds))
 
 
 if __name__ == '__main__':

@@ -1,10 +1,13 @@
 flask
 jupyter
 matplotlib
+mlflow
 numpy
 opencv-python
 pandas
 plotly
+scikit-learn
 torch
 torchvision
 torchaudio
+tqdm

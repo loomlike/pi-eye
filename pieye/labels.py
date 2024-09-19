@@ -1,3 +1,5 @@
+bag_detection_labels = ["empty", "bag", "damaged_bag", "stacked_bag", "others"]
+
 imagenet_labels = [
     "tench",
     "goldfish",

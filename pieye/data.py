@@ -3,10 +3,12 @@
 Refs: https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 """
 import os
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
+import numpy as np
 from PIL import Image
 import pandas as pd
+from sklearn.preprocessing import MultiLabelBinarizer
 import torch
 from torch.nn import functional as F
 from torchvision import tv_tensors
@@ -20,30 +22,77 @@ def get_filepaths(dir: str, ext: List[str] | str = ["png", "jpg"]) -> List[str]:
     return sorted([os.path.join(dir, f) for f in os.listdir(dir) if os.path.splitext(f)[1][1:] in ext])
 
 
+def one_hot_encode_azureml_data_labels(
+    annotations_filepath: str,
+    classes: List[str] = None,
+    returns_full_path: bool = False,
+) -> Tuple[List[str], np.ndarray]:
+    """Convert AzureML dataset labels to one-hot encoding
+
+    Args:
+        annotations_filepath: path to the label csv file generated from AzureML data labeler
+        classes: list of classes to encode. If None, will be inferred from the label file
+        returns_full_path: return full path of the image file or just the filename
+
+    Returns:
+        List of image filenames, List of one-hot encoded labels
+    """
+    labels_df = pd.read_csv(annotations_filepath)
+
+    # Get filename
+    def _parse_filepath(url):
+        return url.split("/")[-1]
+    
+    def _parse_fullpath(url):
+        # ['AmlDatastore:', '', 'data-labeling-project-name', ...]
+        return "/".join(url.split("/")[3:])
+    
+    filenames = labels_df["Url"].apply(_parse_fullpath if returns_full_path else _parse_filepath)
+
+    # Get labels
+    one_hot_encoder = MultiLabelBinarizer(classes=classes)
+    one_hot_encodings = one_hot_encoder.fit_transform(
+        labels_df["Label"].apply(lambda x: x.split(",")).values
+    )
+    
+    return filenames, one_hot_encodings
+
+
 class ClassificationDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        annotations_filepath: str,
         images_dir: str,
-        transforms: Callable,
+        annotations_filepath: str = None,
+        image_filepaths: List[str] = None,
+        labels: np.ndarray = None,
+        classes: List[str] = None,
+        label_parser: Callable = one_hot_encode_azureml_data_labels,
+        transforms: Callable = None,
         target_transforms: Callable = None,
     ):
         """Image classification dataset
 
         Args:
+            images_dir: directory containing images
             annotations_filepath: label csv file with the following format:
                 ```
                 202409130001.jpg, 0
                 202409130001.jpg, 3
                 ...
                 ```
-            images_dir: directory containing images
+            image_filepaths: list of image filepaths
+            labels: list of labels
             transforms: torch.transforms
             target_transforms: label transform function
         """
-        # TODO: Add classes
-        self.labels = pd.read_csv(annotations_filepath)
-        self.images = get_filepaths(images_dir)
+        if annotations_filepath is not None and label_parser is not None and classes is not None:
+            image_filepaths, labels = label_parser(
+                annotations_filepath=annotations_filepath,
+                classes=classes,
+            )
+            
+        self.labels = labels
+        self.images = [os.path.join(images_dir, f) for f in image_filepaths]
         self.transforms = transforms
         self.target_transforms = target_transforms
 
@@ -51,13 +100,15 @@ class ClassificationDataset(torch.utils.data.Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        # image = read_image(self.images[idx])
         image = Image.open(self.images[idx])
-        label = self.labels.iloc[idx, 1]  # columns are [filename, label]
+        label = self.labels[idx]  # columns are [filename, label]
         if self.transforms:
             image = self.transforms(image)
+        else:
+            image = torch.from_numpy(image)
         if self.target_transforms:
             label = self.target_transforms(label)
+        label = torch.from_numpy(label)
         return image, label
 
 
